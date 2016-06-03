@@ -1,92 +1,51 @@
-from RPIO import PWM
-import time
-
-PWM.setup()
-PWM.init_channel(4) #read about DMA channels
-
-def updateLED(character):
-    PWM.add_channel_pulse(
-
 class Character:
 
-    def __init__(self, number, place):
-        self.number = number            # actual number, 15660
-        self.place = place              # its location, 0 - 4
-        self.color = [255, 255, 255]    # current color, [r, g, b]
-        self.setColor = [255, 255, 255] # set color, [r, g, b]  
-        self.brightness = 255           # current brightness, 0 - 255
-        self.setBrightness = 255        # set brightness, 0 - 255
+    def __init__(self, number):
+        self.updating = False               # is true when setpoints haven't been reached
+        self.number = number                # place in address, 0 - 4
+        self.color = [255, 255, 255]        # current color, [r, g, b]
+        self.setColor = [255, 255, 255]     # set color, [r, g, b]
+        self.brightness = 100.              # brightness, 0 - 100
 
     def adjustBrightness(self, newBrightness):
-        self.setBrightness = newBrightness
+        self.brightness = float(newBrightness)
 
     def adjustColor(self, newColor):
-        self.setColor = newColor 
+        self.setColor = newColor
+        self.updating = True
 
     def update(self):
-        b_diff = self.brightness - self.setBrightness
-        if b_diff < 0:
-            self.brightness += 1
-            for i in range(0,3):
-                self.color[i] += 1
-
-        elif b_diff > 0:
-            self.brightness -= 1
-            for i in range(0,3):
-                self.color[i] -= 1
-
-        else:
-            # do nothing
+        update_count = 0                    # counts updated updated numbers
 
         for i in range(0, 3):
-            c_diff[i] = self.color[i] - self.setColor[i]
+            #self.color[i] = self.color[i] * self.brightness / 100
+            c_diff = self.color[i] - self.setColor[i]
             if c_diff < 0:
                 self.color[i] += 1
-
+                print "adding"
             elif c_diff > 0:
                 self.color[i] -= 1
-
+                print "subracting"
             else:
-                # do nothing
+                update_count += 1
 
+        for i in range(0, 3):
             if self.color[i] < 0:
                 self.color[i] = 0
-
             elif self.color[i] > 255:
                 self.color[i] = 255
 
-            else:
-                # do nothing
+        if update_count == 3:
+            self.updating = False
+        elif update_count > 3:
+            print "update_count error"
+        else:
+            self.updating = True
 
+        print ("count: ", update_count, "    update: ", self.updating)
         
-one = Character(1, 0)
-five = Character(5, 1)
-six = Character(6, 2)
-
-print one.setBrightness
-one.adjustBrightness(40)
-one.adjustColor([100, 100, 100])
-
-for i in range(0, 100):
-    one.update()
-    PWM.add_channel_pulse(4, 17, 0, one.brightness)
-    time.sleep(0.02)
+def mockGPIO(dma_channel, gpio_pin, start, width):
+    print ("DMA: ", dma_channel, "    PIN: ", gpio_pin, "    START: ", start, "    WIDTH: ", width)
 
     
 
-
-    
-
-"""
-
-print "...0, 50)"
-PWM.add_channel_pulse(0, 17, 0, 1999)
-time.sleep(5)
-print "...100, 50)"
-PWM.add_channel_pulse(0, 17, 0, 1000)
-time.sleep(5)
-
-PWM.clear_channel_gpio(0, 17)
-PWM.cleanup()
-
-"""
